@@ -17,6 +17,36 @@ func Total(txns []models.Transaction) float64 {
 
 }
 
+func CountByStatus(txns []models.Transaction) map[string]int {
+	statusMap := map[string]int{
+		"approved": 0,
+		"declined": 0,
+		"pending":  0,
+	}
+
+	for _, v := range txns {
+		statusMap[v.Status] += 1
+	}
+
+	return statusMap
+}
+
+func LargestByMerchant(txns []models.Transaction) map[string]models.Transaction {
+
+	largestTxnMap := map[string]models.Transaction{}
+
+	for _, v := range txns {
+		_, ok := largestTxnMap[v.Merchant]
+		if !ok {
+			largestTxnMap[v.Merchant] = v
+		} else if v.Amount > largestTxnMap[v.Merchant].Amount {
+			largestTxnMap[v.Merchant] = v
+		}
+	}
+
+	return largestTxnMap
+}
+
 func main() {
 
 	txns := []models.Transaction{
@@ -33,5 +63,11 @@ func main() {
 
 	total := Total(txns)
 	fmt.Printf("Total of transactions is: %.2f\n", total)
+
+	statusCount := CountByStatus(txns)
+	fmt.Println("Total count of each status type:", statusCount)
+
+	largestTxns := LargestByMerchant(txns)
+	fmt.Println("Largest transaction for each merchant:", largestTxns)
 
 }
