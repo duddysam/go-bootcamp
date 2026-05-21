@@ -31,13 +31,12 @@ func (ims *InMemoryStore) Save(t Transaction) error {
 
 func (ims *InMemoryStore) Get(id string) (Transaction, error) {
 
-	for k, v := range ims.store {
-		if k == id {
-			return v, nil
-		}
-	}
+	txn, ok := ims.store[id]
 
-	return Transaction{}, errors.New("id does not exist")
+	if !ok {
+		return Transaction{}, errors.New("id does not exist")
+	}
+	return txn, nil
 }
 
 func (ims *InMemoryStore) All() []Transaction {
@@ -55,19 +54,19 @@ type LoggingStore struct {
 	ts TransactionStore
 }
 
-func (ls LoggingStore) Save(t Transaction) error {
+func (ls *LoggingStore) Save(t Transaction) error {
 
 	fmt.Printf("Logging txn: %s\n", t.ID)
 	return ls.ts.Save(t)
 }
 
-func (ls LoggingStore) Get(id string) (Transaction, error) {
+func (ls *LoggingStore) Get(id string) (Transaction, error) {
 
 	fmt.Printf("Getting txn: %s\n", id)
 	return ls.ts.Get(id)
 }
 
-func (ls LoggingStore) All() []Transaction {
+func (ls *LoggingStore) All() []Transaction {
 	fmt.Println("Getting all Transactions")
 	return ls.ts.All()
 }
@@ -75,7 +74,10 @@ func (ls LoggingStore) All() []Transaction {
 func ProcessBatch(store TransactionStore, txs []Transaction) (saved int, errs []error) {
 
 	for _, v := range txs {
-		errs = append(errs, store.Save(v))
+		err := store.Save(v)
+		if err != nil {
+			errs = append(errs, err)
+		}
 		saved += 1
 	}
 
@@ -89,7 +91,7 @@ func main() {
 		store: map[string]Transaction{},
 	}
 
-	ls := LoggingStore{
+	ls := &LoggingStore{
 		ts: ms,
 	}
 
@@ -105,7 +107,9 @@ func main() {
 		{ID: "", Merchant: "Tomato", Amount: 750, Currency: "ASD", Status: "pending"},
 	}
 
-	ProcessBatch(ls, txns)
+	saved, errs := ProcessBatch(ls, txns)
+
+	fmt.Println(saved, errs)
 
 	fmt.Println(ms.store)
 
