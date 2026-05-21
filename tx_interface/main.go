@@ -55,9 +55,43 @@ type LoggingStore struct {
 	ts TransactionStore
 }
 
+func (ls LoggingStore) Save(t Transaction) error {
+
+	fmt.Printf("Logging txn: %s\n", t.ID)
+	return ls.ts.Save(t)
+}
+
+func (ls LoggingStore) Get(id string) (Transaction, error) {
+
+	fmt.Printf("Getting txn: %s\n", id)
+	return ls.ts.Get(id)
+}
+
+func (ls LoggingStore) All() []Transaction {
+	fmt.Println("Getting all Transactions")
+	return ls.ts.All()
+}
+
+func ProcessBatch(store TransactionStore, txs []Transaction) (saved int, errs []error) {
+
+	for _, v := range txs {
+		errs = append(errs, store.Save(v))
+		saved += 1
+	}
+
+	return saved, errs
+
+}
+
 func main() {
 
-	fmt.Println("Hello World")
+	ms := &InMemoryStore{
+		store: map[string]Transaction{},
+	}
+
+	ls := LoggingStore{
+		ts: ms,
+	}
 
 	txns := []Transaction{
 		{ID: "tx1", Merchant: "Boeing", Amount: 500, Currency: "USD", Status: "approved"},
@@ -71,6 +105,8 @@ func main() {
 		{ID: "", Merchant: "Tomato", Amount: 750, Currency: "ASD", Status: "pending"},
 	}
 
-	fmt.Println(txns)
+	ProcessBatch(ls, txns)
+
+	fmt.Println(ms.store)
 
 }
