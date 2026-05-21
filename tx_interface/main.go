@@ -77,6 +77,7 @@ func ProcessBatch(store TransactionStore, txs []Transaction) (saved int, errs []
 		err := store.Save(v)
 		if err != nil {
 			errs = append(errs, err)
+			continue
 		}
 		saved += 1
 	}
